@@ -1,1 +1,6 @@
+asgiref==3.9.1
 Django==3.2.3
+pillow==11.3.0
+pytz==2025.2
+setuptools==80.9.0
+sqlparse==0.5.3
