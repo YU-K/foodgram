@@ -10,14 +10,18 @@ class Favorite(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name='favorites',
+        verbose_name='Пользователь',
     )
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
         related_name='favorited_by',
+        verbose_name='Рецепт',
     )
 
     class Meta:
+        verbose_name = 'Избранное'
+        verbose_name_plural = 'Избранные рецепты'
         constraints = [
             models.UniqueConstraint(
                 fields=('user', 'recipe'),
