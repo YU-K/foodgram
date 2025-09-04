@@ -1,11 +1,30 @@
 version: '3.3'
+
+volumes:
+  static:
+  media:
+
 services:
+  backend:
+    container_name: foodgram-backend
+    build: ../backend
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             gunicorn foodgram.wsgi:application --bind 0.0.0.0:8000"
+    restart: always
+    volumes:
+      - static:/app/static/
+      - media:/app/media/
+    environment:
+      DEBUG: "1"  # для теста можно оставить, в проде выключить
 
   frontend:
     container_name: foodgram-front
     build: ../frontend
     volumes:
       - ../frontend/:/app/result_build/
+
   nginx:
     container_name: foodgram-proxy
     image: nginx:1.25.4-alpine
@@ -15,3 +34,5 @@ services:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
       - ../frontend/build:/usr/share/nginx/html/
       - ../docs/:/usr/share/nginx/html/api/docs/
+      - static:/app/static/
+      - media:/app/media/
