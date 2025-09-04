@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
@@ -18,25 +19,33 @@ class User(AbstractUser):
         return self.email
 
 
-class Subscription(models.Model):
-    subscriber = models.ForeignKey(
-        User,
+class Follow(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='subscriptions'
+        related_name='follower',
+        verbose_name='Подписчик',
+        help_text='Пользователь, который подписывается',
     )
-    author = models.ForeignKey(
-        User,
+    following = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='subscribers'
+        related_name='followers',
+        verbose_name='Автор',
+        help_text='Пользователь, на которого подписываются',
     )
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=('subscriber', 'author'),
-                name='unique_subscription'
+                fields=('user', 'following'),
+                name='unique_follow',
             )
         ]
+        verbose_name = 'Подписка'
+        verbose_name_plural = 'Подписки'
+
     def __str__(self):
-        return f'{self.subscriber} - {self.author}'
+        return f'{self.user} подписан на  {self.following}'
+
 
