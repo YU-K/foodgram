@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('recipes', '0001_initial'),
+        # ('recipes', '0001_initial'),
     ]
 
     operations = [
