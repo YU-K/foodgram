@@ -1,8 +1,12 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from .views import RecipeViewSet, TagViewSet, IngredientViewSet
-
+from .views import (
+    IngredientViewSet,
+    RecipeShortLinkView,
+    RecipeViewSet,
+    TagViewSet,
+)
 
 router = DefaultRouter()
 router.register(r'recipes', RecipeViewSet, basename='recipes')
@@ -14,6 +18,7 @@ router.register(
 )
 
 urlpatterns = [
+    path('s/<slug:short_link>/', RecipeShortLinkView.as_view(),
+         name='recipe_short_link'),
     path('', include(router.urls)),
 ]
-

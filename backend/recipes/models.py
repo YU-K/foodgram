@@ -1,7 +1,8 @@
+import uuid
+
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
 from django.db import models
-
 
 User = get_user_model()
 
@@ -11,6 +12,7 @@ COLOR_CHOICES = [
     (BLACK, 'Чёрный'),
     (NONE, 'Без цвета'),
 ]
+
 
 class Tag(models.Model):
     name = models.CharField(
@@ -56,7 +58,7 @@ class Ingredient(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=('name', 'measurement_unit'),
-                name = 'unique_ingredient',
+                name='unique_ingredient',
             )
         ]
         verbose_name = 'Ингредиент'
@@ -125,10 +127,27 @@ class Recipe(models.Model):
         verbose_name='Дата публикации',
     )
 
+    short_link = models.SlugField(
+        max_length=16,
+        unique=True,
+        blank=True,
+        verbose_name='Короткая ссылка',
+        help_text='Постоянный код для короткой ссылки',
+    )
+
     class Meta:
         ordering = ('-pub_date',)
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
+
+    def save(self, *args, **kwargs):
+        if not self.short_link:
+            while True:
+                code = uuid.uuid4().hex[:8]
+                if not Recipe.objects.filter(short_link=code).exists():
+                    self.short_link = code
+                    break
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
