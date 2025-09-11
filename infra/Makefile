@@ -1,10 +1,10 @@
 stop:
 	sudo docker compose stop
 
-build_backend:
-	sudo docker compose build backend
+build:
+	sudo docker compose build
 
 up:
 	sudo docker compose up -d
 
-all: stop build_backend up
+all: stop build up
