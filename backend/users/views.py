@@ -1,11 +1,11 @@
-from pickle import FALSE
-
+from django.contrib.auth import get_user_model
+from djoser.views import UserViewSet as DjoserUserViewSet
+from recipes.models import Recipe
+from recipes.serializers_shot import RecipeShortSerializer
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from djoser.views import UserViewSet as DjoserUserViewSet
-from django.contrib.auth import get_user_model
 
 from .models import Follow
 from .serializers import (
@@ -21,6 +21,7 @@ class CustomUserViewSet(DjoserUserViewSet):
     """ViewSet пользователей с подписками."""
     queryset = User.objects.all()
     serializer_class = CustomUserSerializer
+    permission_classes = [AllowAny]
 
     @action(
         methods=['post', 'delete'],
@@ -89,7 +90,7 @@ class CustomUserViewSet(DjoserUserViewSet):
     @action(
         methods=['put', 'delete'],
         detail=False,
-        permission_classes = [IsAuthenticated],
+        permission_classes=[IsAuthenticated],
         url_path='me/avatar',
     )
     def avatar(self, request):
@@ -111,3 +112,39 @@ class CustomUserViewSet(DjoserUserViewSet):
                 {'status': 'avatar reset'},
                 status=status.HTTP_200_OK,
             )
+
+    @action(
+        methods=['get'],
+        detail=True,
+        permission_classes=[IsAuthenticated],
+        url_path='recipes'
+    )
+    def user_recipes(self, request, id=None):
+
+        try:
+            author = User.objects.get(id=id)
+        except User.DoesNotExist:
+            return Response(
+                {'errors': 'Пользователь не найден.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        recipes = Recipe.objects.filter(author=author)
+        serializer = RecipeShortSerializer(
+            recipes, many=True, context={'request': request}
+        )
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(
+        methods=['get'],
+        detail=False,
+        permission_classes=[IsAuthenticated],
+        url_path='me'
+    )
+    def me(self, request):
+        """Профиль текущего пользователя с аватаром."""
+        serializer = CustomUserSerializer(
+            request.user,
+            context={'request': request}
+        )
+        return Response(serializer.data, status=status.HTTP_200_OK)
