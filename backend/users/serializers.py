@@ -3,11 +3,11 @@ import base64
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from djoser.serializers import UserCreateSerializer, UserSerializer
+from recipes.models import Recipe
+from recipes.serializers_shot import RecipeShortSerializer
 from rest_framework import serializers
 
 from .models import Follow
-from recipes.models import Recipe
-from recipes.serializers_shot import RecipeShortSerializer
 
 User = get_user_model()
 
@@ -19,21 +19,27 @@ class CustomUserCreateSerializer(UserCreateSerializer):
         model = User
         fields = (
             'id', 'email', 'username',
-            'first_name', 'last_name', 'password',
+            'first_name', 'last_name', 'password', 'avatar'
         )
 
 
 class CustomUserSerializer(UserSerializer):
     """Информация о пользователе."""
-
+    avatar = serializers.SerializerMethodField()
     is_subscribed = serializers.SerializerMethodField()
 
     class Meta(UserSerializer.Meta):
         model = User
         fields = (
             'id', 'email', 'username', 'first_name',
-             'last_name', 'avatar', 'is_subscribed',
+            'last_name', 'avatar', 'is_subscribed',
         )
+
+    def get_avatar(self, obj):
+        request = self.context.get('request')
+        if obj.avatar and request:
+            return request.build_absolute_uri(obj.avatar.url)
+        return None
 
     def get_is_subscribed(self, obj):
         user = self.context.get('request').user
@@ -52,7 +58,7 @@ class FollowSerializer(serializers.ModelSerializer):
     last_name = serializers.ReadOnlyField(source='following.last_name')
     avatar = serializers.ImageField(
         source='following.avatar',
-        read_only= True,
+        read_only=True,
     )
     is_subscribed = serializers.SerializerMethodField()
     recipes = serializers.SerializerMethodField()
@@ -70,7 +76,7 @@ class FollowSerializer(serializers.ModelSerializer):
     def get_is_subscribed(self, obj):
         return True
 
-    def get_recipes(self,obj):
+    def get_recipes(self, obj):
         request = self.context.get('request')
         recipes_limit = request.query_params.get('recipes_limit')
         queryset = Recipe.objects.filter(author=obj.following)
@@ -100,7 +106,3 @@ class AvatarSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('avatar',)
-
-
-
-

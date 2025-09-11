@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
 import os
-
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -63,6 +62,8 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'foodgram.urls'
+# FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost")
+FRONTEND_URL = "http://localhost"
 
 TEMPLATES = [
     {
@@ -99,10 +100,14 @@ REST_FRAMEWORK = {
     ]
 }
 
+
 DJOSER = {
     'USER_CREATE_SERIALIZER': 'users.serializers.CustomUserCreateSerializer',
     'USER_SERIALIZER': 'users.serializers.CustomUserSerializer',
+    'CURRENT_USER_SERIALIZER': 'users.serializers.CustomUserSerializer',
+    'HIDE_USERS': False,
 }
+
 
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
@@ -137,7 +142,7 @@ STATIC_URL = '/backend_static/'
 STATIC_ROOT = BASE_DIR / 'static'
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 
 # Internationalization
@@ -156,8 +161,6 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
-
-STATIC_URL = '/static/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
