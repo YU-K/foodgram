@@ -1,11 +1,17 @@
 from django.contrib import admin
 
-from .models import Ingredient, Recipe, RecipeIngredient, Tag
+from .models import Ingredient, Recipe, RecipeIngredient, RecipeTag, Tag
 
 
 class RecipeIngredientInline(admin.TabularInline):
     model = RecipeIngredient
     extra = 1
+
+
+class RecipeTagInline(admin.TabularInline):
+    model = RecipeTag
+    extra = 1
+    autocomplete_fields = ('tag',)
 
 
 @admin.register(Ingredient)
@@ -23,14 +29,12 @@ class TagAdmin(admin.ModelAdmin):
     ordering = ('name',)
 
 
-
-
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
     list_display = ('name', 'author', 'favorites_count', 'pub_date')
     search_fields = ('name', 'author__username', 'tags__name')
     list_filter = ('tags', 'author')
-    inlines = (RecipeIngredientInline,)
+    inlines = (RecipeIngredientInline, RecipeTagInline)
     ordering = ('-pub_date',)
 
     def favorites_count(self, obj):
