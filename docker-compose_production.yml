@@ -33,7 +33,7 @@ services:
     container_name: foodgram-proxy
     image: yuk2/foodgram_gateway
     ports:
-      - "80:80"
+      - "9000:80"
     volumes:
       - static:/staticfiles
       - media:/var/www/foodgram/media/
