@@ -13,7 +13,7 @@ services:
 
   backend:
     container_name: foodgram-back
-    build: backend
+    image: yuk2/foodgram_backend
     env_file: .env
     depends_on:
       - db
@@ -23,7 +23,7 @@ services:
 
   frontend:
     container_name: foodgram-front
-    build: frontend
+    image: yuk2/foodgram_frontend
     command: cp -r /app/build/. /frontend_static/
     volumes:
       - static:/frontend_static
@@ -31,7 +31,7 @@ services:
 
   nginx:
     container_name: foodgram-proxy
-    build: gateway
+    image: yuk2/foodgram_gateway
     ports:
       - "80:80"
     volumes:

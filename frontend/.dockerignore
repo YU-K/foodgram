@@ -1,0 +1,27 @@
+# Локальные зависимости
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Локальные окружения
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Кэш и временные файлы
+*.log
+.DS_Store
+Thumbs.db
+
+# Git и IDE
+.git
+.gitignore
+.idea/
+.vscode/
+
+build/
+
+tests/
+docs/
