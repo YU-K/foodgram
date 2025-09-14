@@ -66,8 +66,8 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'foodgram.urls'
-# FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost")
-FRONTEND_URL = "http://localhost"
+
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost")
 
 TEMPLATES = [
     {
@@ -146,11 +146,11 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-STATIC_URL = '/backend_static/'
-STATIC_ROOT = BASE_DIR / 'static'
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'collected_static')
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = '/var/www/foodgram/media/'
 
 
 # Internationalization
