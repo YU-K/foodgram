@@ -42,8 +42,6 @@ class User(AbstractUser):
         return self.email
 
 
-User = get_user_model()
-
 MAX_COOKING_TIME = 1440
 MIN_COOKING_TIME = 1
 MIN_INGREDIENT_AMOUNT = 1

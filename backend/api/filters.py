@@ -1,6 +1,7 @@
 import django_filters
 from django.contrib import admin
 from django.db.models import Case, IntegerField, Q, When
+
 from recipes.models import Ingredient, Recipe
 
 
