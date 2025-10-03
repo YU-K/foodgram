@@ -1,15 +1,15 @@
 ![Build Status](https://github.com/YU-K/foodgram/actions/workflows/main.yml/badge.svg?branch=main)
-#### 🌐 Сайт проекта: [https://foodgram-site.ddns.net/](https://foodgram-site.ddns.net/)
+#### Сайт проекта: [https://foodgram-site.ddns.net/](https://foodgram-site.ddns.net/)
 
 
-# 🍴 FOODGRAM
+# FOODGRAM
 
 **FOODGRAM** — это веб-приложение для публикации и обмена рецептами.  
 Пользователи могут добавлять собственные рецепты, сохранять понравившиеся, формировать список покупок и подписываться на других авторов.  
 
 ---
 
-## 🚀 Возможности
+## Возможности
 - Регистрация и авторизация пользователей
 - Добавление, редактирование и удаление рецептов
 - Загрузка фотографий к рецептам
@@ -20,7 +20,7 @@
 
 ---
 
-## 🛠 Технологии
+## Технологии
 - **Backend**: Python, Django, Django REST Framework
 - **Frontend**: React
 - **База данных**: PostgreSQL
@@ -30,7 +30,7 @@
 
 ---
 
-## 📦 Установка и запуск
+## Установка и запуск
 
 ### 1. Клонировать репозиторий
 ```bash
@@ -50,5 +50,5 @@ sudo docker compose exec backend python manage.py collectstatic --noinput
 ```bash
 sudo docker compose exec backend python manage.py createsuperuser
 ```
-### 👤 Автор проекта
+### Автор проекта
 [YU-K](https://github.com/YU-K)
