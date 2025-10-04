@@ -1,5 +1,3 @@
-from functools import wraps
-
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
@@ -8,9 +6,13 @@ from django.contrib.auth.forms import (
     UserCreationForm,
 )
 from django.db.models import Count
-from django.utils.safestring import mark_safe as _mark_safe
-from django.utils.translation import gettext_lazy as _
+from django.utils.safestring import mark_safe
 
+from .admin_filters import (
+    HasFollowersFilter,
+    HasRecipesFilter,
+    HasSubscriptionsFilter,
+)
 from .models import (
     Favorite,
     Follow,
@@ -20,20 +22,8 @@ from .models import (
     ShoppingCart,
     Tag,
 )
-from api.filters import (
-    HasFollowersFilter,
-    HasRecipesFilter,
-    HasSubscriptionsFilter,
-)
 
 User = get_user_model()
-
-
-def mark_safe(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        return _mark_safe(func(*args, **kwargs))
-    return wrapper
 
 
 class RecipeIngredientInline(admin.TabularInline):
@@ -44,9 +34,13 @@ class RecipeIngredientInline(admin.TabularInline):
 class InRecipesFilter(admin.SimpleListFilter):
     title = 'используется в рецептах'
     parameter_name = 'in_recipes'
+    LOOKUPS = (
+        ('yes', 'Да'),
+        ('no', 'Нет'),
+    )
 
     def lookups(self, request, model_admin):
-        return (('yes', 'Да'), ('no', 'Нет'))
+        return self.LOOKUPS
 
     def queryset(self, request, queryset):
         if self.value() == 'yes':
@@ -62,56 +56,58 @@ class CookingTimeFilter(admin.SimpleListFilter):
 
     def lookups(self, request, model_admin):
         qs = model_admin.get_queryset(request)
-        times = list(qs.values_list('cooking_time', flat=True))
+        unique_count = (
+            qs.values_list('cooking_time', flat=True).distinct().count())
 
-        if not times:
+        if unique_count < 3:
+            self._ranges = None
             return []
 
-        times.sort()
+        times = sorted(qs.values_list('cooking_time', flat=True))
         n = times[len(times) // 3]
         m = times[2 * len(times) // 3]
+        tmin, tmax = times[0], times[-1]
+        self._ranges = {
+            'fast': (tmin, n),
+            'medium': (n + 1, m),
+            'long': (m + 1, tmax),
+        }
 
-        fast_count = qs.filter(cooking_time__lte=n).count()
-        medium_count = (
-            qs.filter(cooking_time__gt=n, cooking_time__lte=m).count())
-        long_count = qs.filter(cooking_time__gt=m).count()
+        fast_count = (qs.filter(cooking_time__range=self._ranges['fast'])
+                      .count())
+        medium_count = (qs.filter(cooking_time__range=self._ranges['medium'])
+                        .count())
+        long_count = (qs.filter(cooking_time__range=self._ranges['long'])
+                      .count())
         return [
             ('fast', f'быстрее {n} мин ({fast_count})'),
             ('medium', f'быстрее {m} мин ({medium_count})'),
             ('long', f'долго ({long_count})'),
         ]
 
-    def queryset(self, request, queryset):
-        times = list(queryset.values_list('cooking_time', flat=True))
-        if not times:
-            return queryset
+    def queryset(self, request, recipes):
+        if getattr(self, '_ranges', None) is None:
+            return recipes
 
-        times.sort()
-        n = times[len(times) // 3]
-        m = times[2 * len(times) // 3]
-
-        if self.value() == 'fast':
-            return queryset.filter(cooking_time__lte=n)
-        if self.value() == 'medium':
-            return queryset.filter(cooking_time__gt=n, cooking_time__lte=m)
-        if self.value() == 'long':
-            return queryset.filter(cooking_time__gt=m)
-        return queryset
+        val = self.value()
+        if val in self._ranges:
+            return recipes.filter(cooking_time__range=self._ranges[val])
+        return recipes
 
 
 class RecipesCountMixin:
-    @admin.display(description='Число рецептов')
+    @admin.display(description='Рецепты')
     def recipes_count(self, obj):
         return obj.recipes.count()
 
 
-class CustomUserCreationForm(UserCreationForm):
+class UserCreateForm(UserCreationForm):
     class Meta(UserCreationForm.Meta):
         model = User
         fields = ('email', 'username', 'first_name', 'last_name', 'avatar')
 
 
-class CustomUserChangeForm(UserChangeForm):
+class UserUpdateForm(UserChangeForm):
     class Meta:
         model = User
         fields = (
@@ -157,46 +153,38 @@ class RecipeAdmin(admin.ModelAdmin):
     def favorites_count(self, recipe):
         return recipe.favorites.count()
 
-    @mark_safe
     @admin.display(description='Продукты')
     def ingredients_list(self, recipe):
-        items = [
-            f'<li>{ri.ingredient.name}</li>'
-            for ri in recipe.recipe_ingredients.all()
-        ]
-        return f"<ul>{''.join(items)}</ul>"
+        return mark_safe(
+            '<br>'.join((f'{ri.ingredient.name} — '
+                         f'{ri.amount} {ri.ingredient.measurement_unit}')
+                        for ri in recipe.recipe_ingredients.all()))
 
-    @mark_safe
     @admin.display(description='Теги')
     def tags_list(self, recipe):
-        items = [f'<li>{tag.name}</li>' for tag in recipe.tags.all()]
-        return f"<ul>{''.join(items)}</ul>"
+        return mark_safe(
+            '<br>'.join((f'{tag.name}'
+                        for tag in recipe.tags.all())))
 
-    @mark_safe
     @admin.display(description='Изображение')
     def image_preview(self, recipe):
         if recipe.image:
-            return (f'<img src="{recipe.image.url}" width="80" '
-                    f'height="80" style="object-fit: cover;" />')
+            return mark_safe(
+                f'<img src="{recipe.image.url}" width="80" '
+                f'height="80" style="object-fit: cover;" />')
         return '—'
 
 
-@admin.register(Favorite)
-class FavoriteAdmin(admin.ModelAdmin):
-    list_display = ('user', 'recipe')
-    search_fields = ('user__username', 'recipe__name')
-
-
-@admin.register(ShoppingCart)
-class ShoppingCartAdmin(admin.ModelAdmin):
+@admin.register(Favorite, ShoppingCart)
+class UserRecipeRelationAdmin(admin.ModelAdmin):
     list_display = ('user', 'recipe')
     search_fields = ('user__username', 'recipe__name')
 
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
-    add_form = CustomUserCreationForm
-    form = CustomUserChangeForm
+    add_form = UserCreateForm
+    form = UserUpdateForm
     model = User
     list_display = (
         'id', 'username', 'full_name', 'email',
@@ -214,55 +202,58 @@ class UserAdmin(BaseUserAdmin):
     readonly_fields = ('last_login', 'date_joined')
     filter_horizontal = ('groups', 'user_permissions')
     fieldsets = (
-        (_('Credentials'), {'fields': ('email', 'password')}),
-        (_('Personal info'), {'fields': ('username', 'first_name', 'last_name',
-                                         'avatar')}),
-        (_('Permissions'), {'fields': ('is_active', 'is_staff', 'is_superuser',
-                                       'groups', 'user_permissions')}),
-        (_('Important dates'), {'fields': ('last_login', 'date_joined')}),
+        ('Credentials', {'fields': ('email', 'password')}),
+        ('Personal info',
+            {'fields': ('username', 'first_name', 'last_name', 'avatar')}),
+        ('Permissions',
+            {'fields': ('is_active', 'is_staff', 'is_superuser',
+                        'groups', 'user_permissions')}),
+        ('Important dates', {'fields': ('last_login', 'date_joined')}),
     )
     add_fieldsets = (
-        (_('Credentials'), {'classes': ('wide',), 'fields': ('email',
-                                                             'password1',
-                                                             'password2')}),
-        (_('Personal info'), {'fields': ('username', 'first_name', 'last_name',
-                                         'avatar')}),
-        (_('Permissions'), {'fields': ('is_active', 'is_staff', 'is_superuser',
-                                       'groups', 'user_permissions')}),
+        ('Credentials',
+         {'classes': ('wide',), 'fields': ('email', 'password1',
+                                           'password2')}),
+        ('Personal info',
+         {'fields': ('username', 'first_name', 'last_name', 'avatar')}),
+        ('Permissions',
+         {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups',
+                     'user_permissions')}),
     )
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         return qs.annotate(
             recipes_count=Count('recipes', distinct=True),
-            subscriptions_count=Count('subscriptions', distinct=True),
-            followers_count=Count('subscribers', distinct=True),
+            subscriptions_count=Count('subscriptions',
+                                      distinct=True),
+            followers_count=Count('authors', distinct=True),
         )
 
     @admin.display(description='ФИО')
-    def full_name(self, obj):
-        full = f'{obj.first_name} {obj.last_name}'.strip()
+    def full_name(self, user):
+        full = f'{user.first_name} {user.last_name}'.strip()
         return full or '—'
 
-    @mark_safe
     @admin.display(description='Аватар')
     def avatar_thumb(self, obj):
         if getattr(obj, 'avatar', None):
-            return (f'<img src="{obj.avatar.url}" width="40" height="40" '
-                    f'style="border-radius:50%;object-fit:cover;" />')
+            return mark_safe(
+                f'<img src="{obj.avatar.url}" width="40" height="40" '
+                f'style="border-radius:50%;object-fit:cover;" />')
         return '—'
 
     @admin.display(ordering='recipes_count', description='Рецептов')
     def recipes_total(self, obj):
-        return getattr(obj, 'recipes_count', 0)
+        return obj.recipes_count or 0
 
     @admin.display(ordering='subscriptions_count', description='Подписок')
     def subscriptions_total(self, obj):
-        return getattr(obj, 'subscriptions_count', 0)
+        return obj.subscriptions_count or 0
 
     @admin.display(ordering='followers_count', description='Подписчиков')
     def followers_total(self, obj):
-        return getattr(obj, 'followers_count', 0)
+        return obj.followers_count or 0
 
 
 @admin.register(Follow)
