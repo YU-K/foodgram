@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     'djoser',
     'recipes.apps.RecipesConfig',
     'api.apps.ApiConfig',
+    "drf_spectacular",
 ]
 
 AUTH_USER_MODEL = 'recipes.User'
@@ -41,8 +42,6 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'foodgram.urls'
-
-FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost')
 
 TEMPLATES = [
     {
@@ -77,7 +76,8 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',
         'rest_framework.filters.SearchFilter',
-    ]
+    ],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 DJOSER = {
