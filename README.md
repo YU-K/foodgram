@@ -50,5 +50,25 @@ sudo docker compose exec backend python manage.py collectstatic --noinput
 ```bash
 sudo docker compose exec backend python manage.py createsuperuser
 ```
+### 5. Импорт ингредиентов (JSON-массив объектов)
+```bash
+sudo docker compose exec backend python manage.py import_ingredients data/ingredients.json
+```
+### 6 Импорт тегов (JSON-массив объектов)
+```bash
+sudo docker compose exec backend python manage.py import_tags data/tags.json
+```
+## Доступы
+
+- [Сайт проекта](https://foodgram-site.ddns.net/)
+- [Админка](https://foodgram-site.ddns.net/admin/)
+- [API docs (Swagger)](https://foodgram-site.ddns.net/api/docs/)
+- [API docs (ReDoc)](https://foodgram-site.ddns.net/redoc/)
+
+
 ### Автор проекта
-[YU-K](https://github.com/YU-K)
+
+- **ФИО:** Катков Юрий  
+- [GitHub](https://github.com/YU-K)
+- [Email](mailto:katkov_@mail.ru)
+
