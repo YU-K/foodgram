@@ -3,5 +3,5 @@ from recipes.models import Ingredient
 
 
 class Command(BaseJsonImportCommand):
-    help = 'Импорт ингредиентов из JSON в таблицу Ingredient'
+    help = 'Импорт продуктов из JSON в таблицу Ingredient'
     model = Ingredient
