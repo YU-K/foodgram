@@ -8,7 +8,7 @@ from .models import Recipe, RecipeIngredient
 def create_shopping_list_text(user) -> str:
     totals_qs = (
         RecipeIngredient.objects
-        .filter(recipe__in_carts__user=user)
+        .filter(recipe__shoppingcarts__user=user)
         .values(
             name=F('ingredient__name'),
             unit=F('ingredient__measurement_unit'),
@@ -17,20 +17,15 @@ def create_shopping_list_text(user) -> str:
         .order_by(Lower('name'), Lower('unit'))
     )
 
-    product_lines = []
-    for idx, item in enumerate(totals_qs, start=1):
-        name = (item['name'] or '').strip()
-        unit = (item['unit'] or '').strip()
-        amount = item['amount']
-        if not name:
-            continue
-        unit_part = f' ({unit})' if unit else ''
-        product_lines.append(
-            f'{idx}. {name.capitalize()}{unit_part} — {amount}')
+    product_lines = [
+        (f"{idx}. {item['name'].capitalize()} ({item['unit']}) — "
+         f"{item['amount']}")
+        for idx, item in enumerate(totals_qs, start=1)
+    ]
 
     recipes = (
         Recipe.objects
-        .filter(in_carts__user=user)
+        .filter(shoppingcarts__user=user)
         .select_related('author')
         .order_by('name')
         .distinct()
