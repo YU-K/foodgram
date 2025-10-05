@@ -202,10 +202,10 @@ class UserRecipeRelation(models.Model):
         on_delete=models.CASCADE,
         verbose_name='Рецепт',
     )
-    action_label: str = 'связал с'
 
     class Meta:
         abstract = True
+        default_related_name = '%(class)ss'
         constraints = [
             models.UniqueConstraint(
                 fields=('user', 'recipe'),
@@ -214,25 +214,21 @@ class UserRecipeRelation(models.Model):
         ]
 
     def __str__(self):
-        return f'{self.user} {self.action_label} {self.recipe}'
+        return f'{self.user} - {self.recipe}'
 
 
 class ShoppingCart(UserRecipeRelation):
-    action_label = 'добавил в корзину'
 
     class Meta(UserRecipeRelation.Meta):
         verbose_name = 'Элемент корзины'
         verbose_name_plural = 'Список покупок'
-        default_related_name = 'in_carts'
 
 
 class Favorite(UserRecipeRelation):
-    action_label = 'добавил в избранное'
 
     class Meta(UserRecipeRelation.Meta):
         verbose_name = 'Избранное'
         verbose_name_plural = 'Избранные рецепты'
-        default_related_name = 'favorites'
 
 
 class Follow(models.Model):
