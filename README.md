@@ -62,8 +62,7 @@ sudo docker compose exec backend python manage.py import_tags data/tags.json
 
 - [Сайт проекта](https://foodgram-site.ddns.net/)
 - [Админка](https://foodgram-site.ddns.net/admin/)
-- [API docs (Swagger)](https://foodgram-site.ddns.net/api/docs/)
-- [API docs (ReDoc)](https://foodgram-site.ddns.net/redoc/)
+- [API docs](https://foodgram-site.ddns.net/api/docs/)
 
 
 ### Автор проекта
