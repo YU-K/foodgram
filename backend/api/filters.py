@@ -53,8 +53,8 @@ class RecipeFilter(filters.FilterSet):
         user = getattr(self.request, 'user', None)
         if not user or not user.is_authenticated:
             return qs.none() if value else qs
-        return qs.filter(in_carts__user_id=user.id) if value else (
-            qs.exclude(in_carts__user_id=user.id))
+        return qs.filter(shoppingcarts__user_id=user.id) if value else (
+            qs.exclude(shoppingcarts__user_id=user.id))
 
 
 class IngredientFilter(filters.FilterSet):

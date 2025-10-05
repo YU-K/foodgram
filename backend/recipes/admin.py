@@ -9,9 +9,11 @@ from django.db.models import Count
 from django.utils.safestring import mark_safe
 
 from .admin_filters import (
+    CookingTimeFilter,
     HasFollowersFilter,
     HasRecipesFilter,
     HasSubscriptionsFilter,
+    InRecipesFilter,
 )
 from .models import (
     Favorite,
@@ -29,70 +31,6 @@ User = get_user_model()
 class RecipeIngredientInline(admin.TabularInline):
     model = RecipeIngredient
     extra = 1
-
-
-class InRecipesFilter(admin.SimpleListFilter):
-    title = 'используется в рецептах'
-    parameter_name = 'in_recipes'
-    LOOKUPS = (
-        ('yes', 'Да'),
-        ('no', 'Нет'),
-    )
-
-    def lookups(self, request, model_admin):
-        return self.LOOKUPS
-
-    def queryset(self, request, queryset):
-        if self.value() == 'yes':
-            return queryset.filter(recipes__isnull=False).distinct()
-        if self.value() == 'no':
-            return queryset.filter(recipes__isnull=True)
-        return queryset
-
-
-class CookingTimeFilter(admin.SimpleListFilter):
-    title = 'Время приготовления'
-    parameter_name = 'cooking_time'
-
-    def lookups(self, request, model_admin):
-        qs = model_admin.get_queryset(request)
-        unique_count = (
-            qs.values_list('cooking_time', flat=True).distinct().count())
-
-        if unique_count < 3:
-            self._ranges = None
-            return []
-
-        times = sorted(qs.values_list('cooking_time', flat=True))
-        n = times[len(times) // 3]
-        m = times[2 * len(times) // 3]
-        tmin, tmax = times[0], times[-1]
-        self._ranges = {
-            'fast': (tmin, n),
-            'medium': (n + 1, m),
-            'long': (m + 1, tmax),
-        }
-
-        fast_count = (qs.filter(cooking_time__range=self._ranges['fast'])
-                      .count())
-        medium_count = (qs.filter(cooking_time__range=self._ranges['medium'])
-                        .count())
-        long_count = (qs.filter(cooking_time__range=self._ranges['long'])
-                      .count())
-        return [
-            ('fast', f'быстрее {n} мин ({fast_count})'),
-            ('medium', f'быстрее {m} мин ({medium_count})'),
-            ('long', f'долго ({long_count})'),
-        ]
-
-    def queryset(self, request, recipes):
-        if getattr(self, '_ranges', None) is None:
-            return recipes
-
-        val = self.value()
-        if val in self._ranges:
-            return recipes.filter(cooking_time__range=self._ranges[val])
-        return recipes
 
 
 class RecipesCountMixin:
@@ -236,24 +174,24 @@ class UserAdmin(BaseUserAdmin):
         return full or '—'
 
     @admin.display(description='Аватар')
-    def avatar_thumb(self, obj):
-        if getattr(obj, 'avatar', None):
+    def avatar_thumb(self, user):
+        if getattr(user, 'avatar', None):
             return mark_safe(
-                f'<img src="{obj.avatar.url}" width="40" height="40" '
+                f'<img src="{user.avatar.url}" width="40" height="40" '
                 f'style="border-radius:50%;object-fit:cover;" />')
         return '—'
 
     @admin.display(ordering='recipes_count', description='Рецептов')
-    def recipes_total(self, obj):
-        return obj.recipes_count or 0
+    def recipes_total(self, user):
+        return user.recipes_count or 0
 
     @admin.display(ordering='subscriptions_count', description='Подписок')
-    def subscriptions_total(self, obj):
-        return obj.subscriptions_count or 0
+    def subscriptions_total(self, user):
+        return user.subscriptions_count or 0
 
     @admin.display(ordering='followers_count', description='Подписчиков')
-    def followers_total(self, obj):
-        return obj.followers_count or 0
+    def followers_total(self, user):
+        return user.followers_count or 0
 
 
 @admin.register(Follow)
