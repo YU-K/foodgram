@@ -4,6 +4,9 @@ from django.utils import timezone
 
 from .models import Recipe, RecipeIngredient
 
+PRODUCT_LINE_TEMPLATE = '{idx}. {name} ({unit}) — {amount}'
+RECIPE_LINE_TEMPLATE = '{idx}. {name} — Автор: {author}'
+
 
 def create_shopping_list_text(user) -> str:
     totals_qs = (
@@ -18,11 +21,14 @@ def create_shopping_list_text(user) -> str:
     )
 
     product_lines = [
-        (f"{idx}. {item['name'].capitalize()} ({item['unit']}) — "
-         f"{item['amount']}")
+        PRODUCT_LINE_TEMPLATE.format(
+            idx=idx,
+            name=item['name'].capitalize(),
+            unit=item['unit'],
+            amount=item['amount'],
+        )
         for idx, item in enumerate(totals_qs, start=1)
     ]
-
     recipes = (
         Recipe.objects
         .filter(shoppingcarts__user=user)
@@ -32,7 +38,11 @@ def create_shopping_list_text(user) -> str:
     )
 
     recipe_lines = [
-        f'{idx}. {r.name} — Автор: {r.author}'
+        RECIPE_LINE_TEMPLATE.format(
+            idx=idx,
+            name=r.name,
+            author=r.author,
+        )
         for idx, r in enumerate(recipes, start=1)
     ]
 
