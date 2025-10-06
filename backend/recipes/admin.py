@@ -183,15 +183,15 @@ class UserAdmin(BaseUserAdmin):
 
     @admin.display(ordering='recipes_count', description='Рецептов')
     def recipes_total(self, user):
-        return user.recipes_count or 0
+        return user.recipes_count
 
     @admin.display(ordering='subscriptions_count', description='Подписок')
     def subscriptions_total(self, user):
-        return user.subscriptions_count or 0
+        return user.subscriptions_count
 
     @admin.display(ordering='followers_count', description='Подписчиков')
     def followers_total(self, user):
-        return user.followers_count or 0
+        return user.followers_count
 
 
 @admin.register(Follow)
