@@ -1,5 +1,3 @@
-from io import BytesIO
-
 from django.contrib.auth import get_user_model
 from django.db.models import Count
 from django.http import FileResponse
@@ -109,11 +107,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
             url_path='download_shopping_cart')
     def download_shopping_cart(self, request):
         return FileResponse(
-            BytesIO(
-                create_shopping_list_text(request.user).encode('utf-8')),
+            create_shopping_list_text(request.user),
             as_attachment=True,
             filename='shopping_list.txt',
-            content_type='text/plain; charset=utf-8',
+            content_type='text/plain',
         )
 
     @action(detail=True, methods=['get'], url_path='get-link')
@@ -162,9 +159,7 @@ class UsersViewSet(DjoserUserViewSet):
             many=True,
             context={'request': request},
         )
-        return (
-            self.get_paginated_response(serializer.data)) if (
-            page is not None) else Response(serializer.data)
+        return self.get_paginated_response(serializer.data)
 
     @action(methods=['post', 'delete'], detail=True,
             permission_classes=[IsAuthenticated])
@@ -176,7 +171,7 @@ class UsersViewSet(DjoserUserViewSet):
                 Follow, user_id=user.id, following_id=id).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
-        if str(user.id) == str(id):
+        if user.id == id:
             raise ValidationError({
                 'errors': f'Нельзя подписаться на самого себя '
                           f'(@{user.username}).'
