@@ -15,22 +15,21 @@ class BaseJsonImportCommand(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        with open(options['file_path'], encoding='utf-8') as f:
-            items = json.load(f)
-
-        if not isinstance(items, list):
-            raise CommandError('Ожидался JSON-массив объектов.')
-
-        created_count = len(
-            self.model.objects.bulk_create(
-                [self.model(**item) for item in items],
-                ignore_conflicts=True,
-            )
-        )
-        self.stdout.write(
-            self.style.SUCCESS(
+        try:
+            with open(options['file_path'], encoding='utf-8') as f:
+                created_count = len(
+                    self.model.objects.bulk_create(
+                        (self.model(**item) for item in json.load(f)),
+                        ignore_conflicts=True,
+                    )
+                )
+            self.stdout.write(self.style.SUCCESS(
                 f"Импортировано {created_count} записей "
                 f"(источник: {options['file_path']}, "
                 f"модель: {self.model.__name__})"
+            ))
+        except Exception as e:
+            raise CommandError(
+                f"Ошибка при импорте из файла '{options['file_path']}' "
+                f"({type(e).__name__}): {e}"
             )
-        )
