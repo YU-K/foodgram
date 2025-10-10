@@ -1,20 +1,24 @@
 from django.contrib import admin
+from django.contrib.admin.sites import NotRegistered
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import (
     UserChangeForm,
     UserCreationForm,
 )
+from django.contrib.auth.models import Group
 from django.db.models import Count
 from django.utils.safestring import mark_safe
 
 from .admin_filters import (
+    AuthorUsernameFilter,
     CookingTimeFilter,
     HasFollowersFilter,
     HasRecipesFilter,
     HasSubscriptionsFilter,
     InRecipesFilter,
 )
+from .admin_widgets import AdminImagePreviewWidget
 from .models import (
     Favorite,
     Follow,
@@ -53,6 +57,9 @@ class UserUpdateForm(UserChangeForm):
             'is_active', 'is_staff', 'is_superuser', 'groups',
             'user_permissions',
         )
+        widgets = {
+            "avatar": AdminImagePreviewWidget,  # ключевая строка
+        }
 
 
 @admin.register(Ingredient)
@@ -76,16 +83,32 @@ class RecipeAdmin(admin.ModelAdmin):
         'id',
         'name',
         'cooking_time',
-        'author',
+        'author_username',
         'favorites_count',
         'ingredients_list',
         'tags_list',
         'image_preview',
     )
     search_fields = ('name', 'author__username', 'tags__name')
-    list_filter = ('tags', 'author', CookingTimeFilter)
+    list_filter = ('tags', AuthorUsernameFilter, CookingTimeFilter)
     inlines = (RecipeIngredientInline,)
     ordering = ('-pub_date',)
+    readonly_fields = ('image_preview_form',)
+
+    fieldsets = (
+        (None, {
+            'fields': ('name', 'author', 'text', 'cooking_time', 'tags'),
+            'classes': ('wide',),
+        }),
+        ('Изображение', {
+            'fields': (('image', 'image_preview_form'),),
+            'classes': ('wide',),
+        }),
+    )
+
+    @admin.display(description='Автор', ordering='author__username')
+    def author_username(self, recipe):
+        return recipe.author.username
 
     @admin.display(description='В избранном')
     def favorites_count(self, recipe):
@@ -112,11 +135,29 @@ class RecipeAdmin(admin.ModelAdmin):
                 f'height="80" style="object-fit: cover;" />')
         return '—'
 
+    @admin.display(description='Предпросмотр')
+    def image_preview_form(self, recipe):
+        if getattr(recipe, 'image', None):
+            try:
+                url = recipe.image.url
+            except Exception:
+                return 'Нет изображения'
+            return mark_safe(
+                f'<img src="{url}" width="140" '
+                f'style="object-fit:cover;border-radius:6px;'
+                f'box-shadow:0 0 0 1px #e5e7eb;" />'
+            )
+        return 'Нет изображения'
+
 
 @admin.register(Favorite, ShoppingCart)
 class UserRecipeRelationAdmin(admin.ModelAdmin):
-    list_display = ('user', 'recipe')
+    list_display = ('user_username', 'recipe')
     search_fields = ('user__username', 'recipe__name')
+
+    @admin.display(description='Пользователь', ordering='user__username')
+    def user_username(self, obj):
+        return obj.user.username
 
 
 @admin.register(User)
@@ -127,7 +168,7 @@ class UserAdmin(BaseUserAdmin):
     list_display = (
         'id', 'username', 'full_name', 'email',
         'avatar_thumb', 'recipes_total', 'subscriptions_total',
-        'followers_total', 'is_staff', 'is_active',
+        'followers_total'
     )
     search_fields = ('email', 'username', 'first_name', 'last_name')
     list_filter = (
@@ -141,12 +182,13 @@ class UserAdmin(BaseUserAdmin):
     filter_horizontal = ('groups', 'user_permissions')
     fieldsets = (
         ('Credentials', {'fields': ('email', 'password')}),
-        ('Personal info',
-            {'fields': ('username', 'first_name', 'last_name', 'avatar')}),
-        ('Permissions',
+        ('Личные данные',
+            {'fields': ('username', 'first_name', 'last_name')}),
+        ("Профиль", {"fields": ("avatar",)}),
+        ('Права доступа',
             {'fields': ('is_active', 'is_staff', 'is_superuser',
                         'groups', 'user_permissions')}),
-        ('Important dates', {'fields': ('last_login', 'date_joined')}),
+        ('Важные даты', {'fields': ('last_login', 'date_joined')}),
     )
     add_fieldsets = (
         ('Credentials',
@@ -196,5 +238,21 @@ class UserAdmin(BaseUserAdmin):
 
 @admin.register(Follow)
 class FollowAdmin(admin.ModelAdmin):
-    list_display = ('user', 'following')
+    list_display = ('user_username', 'following_username')
     search_fields = ('user__username', 'following__username')
+    list_select_related = ('user', 'following')
+    autocomplete_fields = ('user', 'following')
+
+    @admin.display(description='Подписчик', ordering='user__username')
+    def user_username(self, following):
+        return following.user.username
+
+    @admin.display(description='Автор', ordering='following__username')
+    def following_username(self, author):
+        return author.following.username
+
+
+try:
+    admin.site.unregister(Group)
+except NotRegistered:
+    pass
