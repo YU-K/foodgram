@@ -121,7 +121,7 @@ class Recipe(models.Model):
                         f' минута.'
             )
         ],
-        verbose_name='Время приготовления (мин.)',
+        verbose_name='Время приготовления (мин)',
     )
     tags = models.ManyToManyField(
         Tag,
