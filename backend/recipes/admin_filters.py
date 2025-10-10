@@ -1,4 +1,7 @@
 from django.contrib import admin
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 
 class BaseYesNoFilter(admin.SimpleListFilter):
@@ -13,20 +16,34 @@ class BaseYesNoFilter(admin.SimpleListFilter):
     def lookups(self, request, model_admin):
         return self.LOOKUPS
 
-    def filter_yes(self, queryset):
-        qs = queryset.filter(**{f'{self.related_name}__isnull': False})
-        return qs.distinct() if self.use_distinct else qs
-
-    def filter_no(self, queryset):
-        qs = queryset.filter(**{f'{self.related_name}__isnull': True})
-        return qs.distinct() if self.use_distinct else qs
-
     def queryset(self, request, queryset):
         value = self.value()
         if value == 'yes':
-            return self.filter_yes(queryset)
-        if value == 'no':
-            return self.filter_no(queryset)
+            qs = queryset.filter(**{f'{self.related_name}__isnull': False})
+        elif value == 'no':
+            qs = queryset.filter(**{f'{self.related_name}__isnull': True})
+        else:
+            return queryset
+
+        return qs.distinct() if self.use_distinct else qs
+
+
+class AuthorUsernameFilter(admin.SimpleListFilter):
+    title = 'Автор'
+    parameter_name = 'author'
+
+    def lookups(self, request, model_admin):
+        qs = model_admin.get_queryset(request)
+        authors = (qs
+                   .values_list('author__id', 'author__username')
+                   .distinct()
+                   .order_by('author__username'))
+        return [(aid, uname or f'ID {aid}') for aid, uname in authors]
+
+    def queryset(self, request, queryset):
+        value = self.value()
+        if value:
+            return queryset.filter(author_id=value)
         return queryset
 
 
