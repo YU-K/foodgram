@@ -6,6 +6,20 @@ from .models import Recipe, RecipeIngredient
 
 PRODUCT_LINE_TEMPLATE = '{idx}. {name} ({unit}) — {amount}'
 RECIPE_LINE_TEMPLATE = '{idx}. {name} — Автор: {author}'
+MONTHS = {
+    1: 'января',
+    2: 'февраля',
+    3: 'марта',
+    4: 'апреля',
+    5: 'мая',
+    6: 'июня',
+    7: 'июля',
+    8: 'августа',
+    9: 'сентября',
+    10: 'октября',
+    11: 'ноября',
+    12: 'декабря',
+}
 
 
 def create_shopping_list_text(user) -> str:
@@ -45,10 +59,12 @@ def create_shopping_list_text(user) -> str:
         )
         for idx, r in enumerate(recipes, start=1)
     ]
+    now = timezone.localtime()
+    # now_str = timezone.localtime().strftime('%d.%m.%Y %H:%M')
+    now_str = f'{now.day:02d} {MONTHS[now.month]} {now.year}'
 
-    now_str = timezone.localtime().strftime('%d.%m.%Y %H:%M')
     return '\n'.join([
-        f'Список покупок — {now_str}',
+        f'Список покупок — от {now_str}',
         'Продукты:',
         *(product_lines or ['(нет продуктов)']),
         'Рецепты в корзине:',
