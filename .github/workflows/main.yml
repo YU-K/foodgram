@@ -114,6 +114,7 @@ jobs:
             docker compose -f docker-compose_production.yml down
             docker compose -f docker-compose_production.yml up -d
             docker compose -f docker-compose_production.yml exec -T backend python manage.py migrate
+            docker compose -f docker-compose_production.yml exec -T backend python manage.py load_initial_data
             docker compose -f docker-compose_production.yml exec -T backend python manage.py collectstatic
             docker compose -f docker-compose_production.yml exec -T backend cp -r /app/collected_static/. /backend_static/static/
 
